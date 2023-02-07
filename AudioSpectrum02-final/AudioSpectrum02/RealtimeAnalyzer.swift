@@ -12,9 +12,9 @@ class RealtimeAnalyzer {
     private var fftSize: Int
     private lazy var fftSetup = vDSP_create_fftsetup(vDSP_Length(Int(round(log2(Double(fftSize))))), FFTRadix(kFFTRadix2))
     
-    public var frequencyBands: Int = 80 //频带数量
-    public var startFrequency: Float = 100 //起始频率
-    public var endFrequency: Float = 18000 //截止频率
+    public var frequencyBands: Int = 60 //频带数量
+    public var startFrequency: Float = 20 //起始频率
+    public var endFrequency: Float = 20000 //截止频率
     
     private lazy var bands: [(lowerFrequency: Float, upperFrequency: Float)] = {
         var bands = [(lowerFrequency: Float, upperFrequency: Float)]()
@@ -24,6 +24,7 @@ class RealtimeAnalyzer {
         for i in 1...frequencyBands {
             //2：频带的上频点是下频点的2^n倍
             let highFrequency = nextBand.lowerFrequency * powf(2, n)
+            //下一个频带的下频点是上一个的高频点，依次递增
             nextBand.upperFrequency = i == frequencyBands ? endFrequency : highFrequency
             bands.append(nextBand)
             nextBand.lowerFrequency = highFrequency
@@ -59,13 +60,54 @@ class RealtimeAnalyzer {
             let weightedAmplitudes = amplitudes.enumerated().map {(index, element) in
                 return element * aWeights[index]
             }
+
             var spectrum = bands.map {
-                findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize)) * 5
+                findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))*8
             }
+
             spectrum = highlightWaveform(spectrum: spectrum)
-            
+            spectrumBuffer[index] = spectrum
+
             let zipped = zip(spectrumBuffer[index], spectrum)
             spectrumBuffer[index] = zipped.map { $0.0 * spectrumSmooth + $0.1 * (1 - spectrumSmooth) }
+
+  
+            
+//            let weightedAmplitudes = amplitudes.enumerated().map {(index, element) in
+//                return element
+//            }
+////            var spectrum2 = bands.map {
+////                findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))
+////            }
+//            var spectrum2 = weightedAmplitudes
+//
+//            var one: Float32 = 1
+//            var c = [Float](repeating: 0, count: 80)
+//
+//
+////            var addvalue:Float = 1.5849e-13;
+////            vDSP_vsadd(spectrum2, 1, &addvalue, &c, 1, 80);
+//
+//            vDSP_vdbcon(spectrum2, 1, &one, &c, 1, 80, 1)
+////            var min:Float = 0.0
+////            var minIndex:vDSP_Length = 0
+////            vDSP_minvi(c, 1, &min, &minIndex, 80);
+////            print("min:\(min)")
+//
+//
+//            var addvalue:Float = 85;
+//            vDSP_vsadd(c, 1, &addvalue, &c, 1, 80);
+//
+//            var scale:Float = 1/128
+//            vDSP_vsmul(c, 1, &scale, &c, 1, 80)
+//
+//
+//            c = highlightWaveform(spectrum: c)
+//
+//            spectrumBuffer[index] = c
+//            let zipped = zip(spectrumBuffer[index], c)
+//            spectrumBuffer[index] = zipped.map { $0.0 * spectrumSmooth + $0.1 * (1 - spectrumSmooth) }
+
         }
         return spectrumBuffer
     }
@@ -116,6 +158,8 @@ class RealtimeAnalyzer {
             vDSP_vsmul(fftInOut.imagp, 1, [fftNormFactor], fftInOut.imagp, 1, vDSP_Length(fftSize / 2));
             var channelAmplitudes = [Float](repeating: 0.0, count: Int(fftSize / 2))
             vDSP_zvabs(&fftInOut, 1, &channelAmplitudes, 1, vDSP_Length(fftSize / 2));
+//            vDSP_zvmags(&fftInOut, 1, &channelAmplitudes, 1, vDSP_Length(fftSize / 2));
+
             channelAmplitudes[0] = channelAmplitudes[0] / 2 //直流分量的振幅需要再除以2
             amplitudes.append(channelAmplitudes)
         }
@@ -123,8 +167,11 @@ class RealtimeAnalyzer {
     }
     
     private func findMaxAmplitude(for band:(lowerFrequency: Float, upperFrequency: Float), in amplitudes: [Float], with bandWidth: Float) -> Float {
+//        let a = 44100/1024
+//        let b = a/
         let startIndex = Int(round(band.lowerFrequency / bandWidth))
         let endIndex = min(Int(round(band.upperFrequency / bandWidth)), amplitudes.count - 1)
+//        print("startIndex:\(startIndex) endIndex:\(endIndex)")
         return amplitudes[startIndex...endIndex].max()!
     }
     
@@ -164,6 +211,31 @@ class RealtimeAnalyzer {
         //4：末尾几个不参与计算
         averagedSpectrum.append(contentsOf: Array(spectrum.suffix(startIndex)))
         return averagedSpectrum
+
+        //        let filter: [Float] = [0.1, 0.2, 0.3, 0.5, 0.3, 0.2, 0.1]
+        //        let filter: [Float] = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,0.1,0.1,0.1]
+        //        let filter: [Float] = [0.05, 0.2, 0.5, 0.2, 0.05]
+        let filter: [Float] = [1, 2, 3, 5, 3, 2, 1]
+        let outputCount = spectrum.count - filter.count + 1
+        var correlationResult = [Float](repeating: 0.0, count: outputCount)
+
+
+        var signal = spectrum
+//        signal.removeSubrange(0..<3)
+        vDSP_conv(signal, 1, filter, 1, &correlationResult, 1, vDSP_Length(outputCount), vDSP_Length(filter.count))
+//        vDSP_desamp(
+//            samples,
+//            vDSP_Stride(strideLength),
+//            filter,
+//            &downSampledData,
+//            vDSP_Length(sampleCount),
+//            vDSP_Length(strideLength)
+//        )
+        var scale = 1/Float(filter.reduce(0, +))
+        var c = [Float](repeating: 0, count: outputCount)
+        vDSP_vsmul(correlationResult, 1, &scale, &c, 1, vDSP_Length(correlationResult.count))
+        return c
+        
     }
     
 }

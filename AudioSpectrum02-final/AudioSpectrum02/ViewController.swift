@@ -29,6 +29,7 @@ class ViewController: UIViewController {
         trackTableView.dataSource = self
         player = AudioSpectrumPlayer()
         player.delegate = self
+        spectrumView.frequencyBands = 60
     }
     override func viewDidLayoutSubviews() {
         let barSpace = spectrumView.frame.width / CGFloat(player.analyzer.frequencyBands * 3 - 1)
