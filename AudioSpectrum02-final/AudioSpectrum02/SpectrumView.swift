@@ -27,6 +27,13 @@ class SpectrumView: UIView {
     var maxH:CGFloat = 0
     
     
+
+    lazy var imageView: UIImageView = {
+        let imageView = UIImageView()
+        return imageView
+    }()
+    
+    
     
     var frequencyBands = 40 {
         didSet {
@@ -213,16 +220,45 @@ class SpectrumView: UIView {
         }
 
         
+//        //定义渐变颜色数组
+//        let colors = [  204.0 / 255.0, 224.0 / 255.0, 244.0 / 255.0, 1.00,
+//                        29.0 / 255.0, 156.0 / 255.0, 215.0 / 255.0, 1.00,
+//                        0.0 / 255.0,  50.0 / 255.0, 126.0 / 255.0, 1.00,]
+//
+//
+//        //使用rgb颜色空间
+//        let colorSpace = CGColorSpaceCreateDeviceRGB ()
+//        //颜色数组（这里使用三组颜色作为渐变）fc6820
+//        let compoents:[ CGFloat ] = [0xfc/255, 0x68/255, 0x20/255, 1,
+//                                   0xfe/255, 0xd3/255, 0x2f/255, 1,
+//                                   0xb1/255, 0xfc/255, 0x33/255, 1]
+//        //没组颜色所在位置（范围0~1)
+//        let locations:[ CGFloat ] = [0,0.5,1]
+//        //生成渐变色（count参数表示渐变个数）
+//        let gradient = CGGradient (colorSpace: colorSpace, colorComponents: compoents,
+//                                  locations: locations, count: locations.count)!
+//
+//        //渐变开始位置
+//        let start = CGPoint (x: self .bounds.minX, y: self .bounds.minY)
+//        //渐变结束位置
+//        let end = CGPoint (x: self .bounds.maxX, y: self .bounds.minY)
+//        //绘制渐变
+////        context.drawLinearGradient(gradient, start: start, end: end,
+////                                   options: .drawsBeforeStartLocation)
+//        context.drawRadialGradient(gradient, startCenter: start, startRadius: r, endCenter: end, endRadius: 80, options: .drawsBeforeStartLocation)
         //设置线条颜色
         context.setStrokeColor(UIColor.orange.cgColor)
+//        context.setStrokeColor(compoents)
+//
         //设置线条宽度
         context.setLineWidth(4)
         //设置填充颜色
-        context.setFillColor(UIColor.red.cgColor)
+//        context.setFillColor(compoents)
         //设置端点样式
         context.setLineCap(.round)
         //绘制路径
         context.strokePath()
+//
         
 //            context.drawPath(using: .stroke)
 

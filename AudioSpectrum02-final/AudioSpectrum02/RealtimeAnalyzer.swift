@@ -14,7 +14,7 @@ class RealtimeAnalyzer {
     
     public var frequencyBands: Int = 60 //频带数量
     public var startFrequency: Float = 20 //起始频率
-    public var endFrequency: Float = 20000 //截止频率
+    public var endFrequency: Float = 22000 //截止频率
     
     private lazy var bands: [(lowerFrequency: Float, upperFrequency: Float)] = {
         var bands = [(lowerFrequency: Float, upperFrequency: Float)]()
@@ -62,7 +62,7 @@ class RealtimeAnalyzer {
             }
 
             var spectrum = bands.map {
-                findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))*8
+                findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))*5
             }
 
             spectrum = highlightWaveform(spectrum: spectrum)
