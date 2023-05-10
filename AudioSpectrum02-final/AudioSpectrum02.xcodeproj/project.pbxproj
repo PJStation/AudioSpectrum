@@ -330,6 +330,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3R69D9F8F6;
 				INFOPLIST_FILE = "$(SRCROOT)/AudioSpectrum02/Supporting Files/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = iMusic;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -348,6 +349,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 3R69D9F8F6;
 				INFOPLIST_FILE = "$(SRCROOT)/AudioSpectrum02/Supporting Files/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = iMusic;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

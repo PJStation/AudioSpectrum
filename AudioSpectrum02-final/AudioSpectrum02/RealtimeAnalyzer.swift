@@ -61,10 +61,25 @@ class RealtimeAnalyzer {
                 return element * aWeights[index]
             }
 
-            var spectrum = bands.map {
-                findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))*5
+            var spectrum:[Float] = bands.map {
+//                var maxAmplitude = findMaxAmplitude(for: $0, in: amplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))
+                var maxAmplitude = findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))
+                maxAmplitude = maxAmplitude * 3
+                return maxAmplitude
+//                findMaxAmplitude(for: $0, in: weightedAmplitudes, with: Float(buffer.format.sampleRate)  / Float(self.fftSize))*5
             }
-
+            
+//            var one: Float32 = 1
+//            var c = [Float](repeating: 0, count: spectrum.count)
+//            vDSP_vdbcon(spectrum, 1, &one, &spectrum, 1, vDSP_Length(spectrum.count), 1)
+//            var addvalue:Float = 74
+//            vDSP_vsadd(spectrum, 1, &addvalue, &spectrum, 1, vDSP_Length(spectrum.count))
+//            var scale:Float = 1.0/128; //256.f / frameCount;
+//            vDSP_vsmul(spectrum, 1, &scale, &spectrum, 1, vDSP_Length(spectrum.count));
+//            for (i,item) in spectrum.enumerated() {
+//                print("item:\(item)")
+//            }
+            
             spectrum = highlightWaveform(spectrum: spectrum)
             spectrumBuffer[index] = spectrum
 
@@ -197,20 +212,20 @@ class RealtimeAnalyzer {
     private func highlightWaveform(spectrum: [Float]) -> [Float] {
         //1: 定义权重数组，数组中间的5表示自己的权重
         //   可以随意修改，个数需要奇数
-        let weights: [Float] = [1, 2, 3, 5, 3, 2, 1]
-        let totalWeights = Float(weights.reduce(0, +))
-        let startIndex = weights.count / 2
-        //2: 开头几个不参与计算
-        var averagedSpectrum = Array(spectrum[0..<startIndex])
-        for i in startIndex..<spectrum.count - startIndex {
-            //3: zip作用: zip([a,b,c], [x,y,z]) -> [(a,x), (b,y), (c,z)]
-            let zipped = zip(Array(spectrum[i - startIndex...i + startIndex]), weights)
-            let averaged = zipped.map { $0.0 * $0.1 }.reduce(0, +) / totalWeights
-            averagedSpectrum.append(averaged)
-        }
-        //4：末尾几个不参与计算
-        averagedSpectrum.append(contentsOf: Array(spectrum.suffix(startIndex)))
-        return averagedSpectrum
+//        let weights: [Float] = [1, 2, 3, 5, 3, 2, 1]
+//        let totalWeights = Float(weights.reduce(0, +))
+//        let startIndex = weights.count / 2
+//        //2: 开头几个不参与计算
+//        var averagedSpectrum = Array(spectrum[0..<startIndex])
+//        for i in startIndex..<spectrum.count - startIndex {
+//            //3: zip作用: zip([a,b,c], [x,y,z]) -> [(a,x), (b,y), (c,z)]
+//            let zipped = zip(Array(spectrum[i - startIndex...i + startIndex]), weights)
+//            let averaged = zipped.map { $0.0 * $0.1 }.reduce(0, +) / totalWeights
+//            averagedSpectrum.append(averaged)
+//        }
+//        //4：末尾几个不参与计算
+//        averagedSpectrum.append(contentsOf: Array(spectrum.suffix(startIndex)))
+//        return averagedSpectrum
 
         //        let filter: [Float] = [0.1, 0.2, 0.3, 0.5, 0.3, 0.2, 0.1]
         //        let filter: [Float] = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,0.1,0.1,0.1]
@@ -234,6 +249,10 @@ class RealtimeAnalyzer {
         var scale = 1/Float(filter.reduce(0, +))
         var c = [Float](repeating: 0, count: outputCount)
         vDSP_vsmul(correlationResult, 1, &scale, &c, 1, vDSP_Length(correlationResult.count))
+        for _ in 0..<3{
+            c.insert(0, at: 0)
+            c.append(0)
+        }
         return c
         
     }
